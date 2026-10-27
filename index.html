@@ -1,71 +1,259 @@
 
 <!DOCTYPE html>
-<html lang="ur">
+<html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Azeez Mobile Hub</title>
 <style>
-body{font-family:Arial,sans-serif;background:#f2f5f9;margin:0;padding:16px;color:#172033}
-main{max-width:520px;margin:auto}
+*{box-sizing:border-box}
+body{font-family:Arial,sans-serif;background:#f1f5f9;color:#172033;margin:0;padding:14px}
+main{max-width:650px;margin:auto}
 header{background:#12345a;color:white;padding:20px;border-radius:14px;text-align:center}
-section{background:white;padding:18px;margin-top:16px;border-radius:14px;box-shadow:0 2px 8px #0001}
-label{display:block;margin-top:14px;font-weight:bold}
-input,select{box-sizing:border-box;width:100%;padding:12px;margin-top:6px;border:1px solid #ccd3dd;border-radius:8px;font-size:16px}
-button{width:100%;padding:13px;background:#126bce;color:white;border:0;border-radius:8px;font-size:17px;margin-top:18px}
-.result{line-height:2;font-size:17px}
-.small{font-size:13px;color:#64748b}
+section{background:white;padding:16px;margin-top:14px;border-radius:12px}
+h3{margin-top:4px}
+label{display:block;font-weight:bold;margin-top:12px;font-size:14px}
+input,select{width:100%;padding:12px;margin-top:5px;border:1px solid #cbd5e1;border-radius:8px;font-size:16px;background:white}
+button{padding:11px;border:0;border-radius:8px;background:#126bce;color:white;font-size:15px;margin-top:12px;cursor:pointer}
+.secondary{background:#475569}
+.danger{background:#b91c1c}
+.full{width:100%}
+.card{border:1px solid #dbe3ed;padding:13px;border-radius:10px;margin-top:12px;overflow-wrap:anywhere}
+.info{background:#eff6ff;padding:12px;border-radius:8px;line-height:1.8;margin-top:12px}
+.muted{font-size:13px;color:#64748b}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+hr{border:0;border-top:1px solid #e2e8f0;margin:14px 0}
+@media(max-width:380px){.row{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
 <main>
 <header>
 <h2>Azeez Mobile Hub</h2>
-<p>Mobile Installment Calculator</p>
+<p>Customer & Installment Management</p>
 </header>
+
 <section>
-<h3>Qiston ka Hisaab</h3>
-<label>Mobile Model</label>
-<input id="model" placeholder="Misal: Samsung A15">
-<label>Cash Price (Rs)</label>
-<input id="cash" type="number" value="50000" min="1">
-<label>Installment Price (Rs)</label>
-<input id="sale" type="number" value="75000" min="1">
+<h3>➕ New Customer</h3>
+<form id="customerForm">
+<label>Customer Name *</label>
+<input id="name" required placeholder="Customer ka naam">
+<label>Mobile Number *</label>
+<input id="phone" required type="tel" placeholder="03XXXXXXXXX">
+<label>Guarantor Name</label>
+<input id="guarantor" placeholder="Zamin ka naam">
+<label>Mobile Model *</label>
+<input id="model" required placeholder="e.g. Samsung A15">
+<div class="row">
+<div>
+<label>Cash Price (Rs) *</label>
+<input id="cash" type="number" min="1" required value="50000">
+</div>
+<div>
+<label>Installment Price (Rs) *</label>
+<input id="sale" type="number" min="1" required value="75000">
+</div>
+</div>
+<div class="row">
+<div>
 <label>Advance (%)</label>
-<input id="advance" type="number" value="30" min="0" max="100">
-<label>Qiston ka Arsa</label>
+<input id="advancePct" type="number" min="0" max="100" value="30" required>
+</div>
+<div>
+<label>Duration</label>
 <select id="months">
-<option value="3">3 Mahine</option>
-<option value="6" selected>6 Mahine</option>
-<option value="9">9 Mahine</option>
-<option value="12">12 Mahine</option>
+<option value="3">3 months</option>
+<option value="6" selected>6 months</option>
+<option value="9">9 months</option>
+<option value="12">12 months</option>
 </select>
-<button onclick="calculate()">Hisab Karein</button>
-<div id="result" class="result"></div>
-<p class="small">Yeh calculator hai. Customer records abhi is version mein save nahi hote.</p>
+</div>
+</div>
+<div class="info" id="preview"></div>
+<button class="full" type="submit">Save Customer</button>
+</form>
+</section>
+
+<section>
+<h3>🔎 Search Customers</h3>
+<input id="search" placeholder="Name, phone ya mobile model">
+<div id="customerList"></div>
+</section>
+
+<section>
+<h3>📊 Business Summary</h3>
+<div class="info" id="summary"></div>
+<p class="muted">Data is stored only in this browser on this device. It is not an online backup.</p>
+<button class="secondary full" id="exportBtn" type="button">Download Backup (JSON)</button>
+<input type="file" id="importFile" accept=".json,application/json" hidden>
+<button class="secondary full" id="importBtn" type="button">Restore Backup</button>
 </section>
 </main>
+
 <script>
-function calculate(){
-const cash=Number(document.getElementById('cash').value);
-const sale=Number(document.getElementById('sale').value);
-const pct=Number(document.getElementById('advance').value);
-const months=Number(document.getElementById('months').value);
-const model=document.getElementById('model').value||'Mobile';
-if(cash<=0||sale<=0||pct<0||pct>100){alert('Sahi price aur advance likhein');return}
-const down=Math.round(sale*pct/100);
-const balance=sale-down;
-const monthly=Math.ceil(balance/months);
-document.getElementById('result').innerHTML=
-'<hr><b>'+model+'</b><br>'+
-'Cash Price: Rs '+cash.toLocaleString('en-PK')+'<br>'+
-'Installment Price: Rs '+sale.toLocaleString('en-PK')+'<br>'+
-'Advance: Rs '+down.toLocaleString('en-PK')+'<br>'+
-'Baqaya: Rs '+balance.toLocaleString('en-PK')+'<br>'+
-'Monthly Qist: Rs '+monthly.toLocaleString('en-PK')+'<br>'+
-'<span class="small">Aakhri qist mein rounding ka farq adjust karein.</span>';
+const $ = id => document.getElementById(id);
+const KEY = 'azeez_mobile_hub_customers_v1';
+let customers = [];
+try { customers = JSON.parse(localStorage.getItem(KEY) || '[]'); }
+catch(e) { customers = []; }
+
+const money = n => 'Rs ' + Math.round(n).toLocaleString('en-PK');
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({
+'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+}[c]));
+
+function saveData(){
+  try {
+    localStorage.setItem(KEY, JSON.stringify(customers));
+    return true;
+  } catch(e) {
+    alert('Storage full or unavailable. Download a backup and check browser settings.');
+    return false;
+  }
 }
-calculate();
+function amounts(sale,pct,months){
+  const advance = Math.round(sale*pct/100);
+  const balance = sale-advance;
+  return {advance,balance,monthly:Math.ceil(balance/months)};
+}
+function preview(){
+  const sale=Number($('sale').value)||0;
+  const pct=Number($('advancePct').value)||0;
+  const months=Number($('months').value)||6;
+  if(pct<0||pct>100){
+    $('preview').textContent='Advance must be between 0% and 100%.';
+    return;
+  }
+  const a=amounts(sale,pct,months);
+  $('preview').innerHTML='Advance: <b>'+money(a.advance)+'</b><br>'+
+    'Remaining after advance: <b>'+money(a.balance)+'</b><br>'+
+    'Approx. monthly installment: <b>'+money(a.monthly)+'</b>';
+}
+['sale','advancePct','months'].forEach(id=>$(id).addEventListener('input',preview));
+
+$('customerForm').addEventListener('submit',e=>{
+  e.preventDefault();
+  const name=$('name').value.trim();
+  const phone=$('phone').value.trim();
+  const model=$('model').value.trim();
+  const cash=Number($('cash').value);
+  const sale=Number($('sale').value);
+  const pct=Number($('advancePct').value);
+  const months=Number($('months').value);
+  if(!name||!phone||!model||cash<=0||sale<=0||pct<0||pct>100){
+    alert('Please check all required fields and prices.');
+    return;
+  }
+  const a=amounts(sale,pct,months);
+  const customer={
+    id:Date.now().toString(),
+    name,phone,model,guarantor:$('guarantor').value.trim(),
+    cash,sale,pct,months,
+    advancePaid:a.advance,
+    payments:[],
+    created:new Date().toISOString()
+  };
+  customers.unshift(customer);
+  if(!saveData()){customers.shift();return;}
+  e.target.reset();
+  $('cash').value=50000;
+  $('sale').value=75000;
+  $('advancePct').value=30;
+  $('months').value='6';
+  preview();render();
+  alert('Customer saved successfully.');
+});
+
+function paid(c){return Number(c.advancePaid||0)+
+  (c.payments||[]).reduce((s,p)=>s+Number(p.amount||0),0);}
+function render(){
+  const q=$('search').value.trim().toLowerCase();
+  const filtered=customers.filter(c=>
+    [c.name,c.phone,c.model,c.guarantor].some(v=>String(v||'').toLowerCase().includes(q))
+  );
+  $('customerList').innerHTML=filtered.length?filtered.map(c=>{
+    const p=paid(c),due=Math.max(0,c.sale-p);
+    return `<div class="card">
+      <b>${esc(c.name)}</b><br>
+      <span class="muted">${esc(c.phone)} · ${esc(c.model)}</span>
+      <hr>
+      Cash price: ${money(c.cash)}<br>
+      Installment price: ${money(c.sale)}<br>
+      Advance recorded: ${money(c.advancePaid)}<br>
+      Duration: ${c.months} months<br>
+      Total paid: <b>${money(p)}</b><br>
+      Remaining: <b>${money(due)}</b>
+      ${c.guarantor?'<br>Guarantor: '+esc(c.guarantor):''}
+      <button class="full" onclick="addPayment('${c.id}')">Record Payment</button>
+      <button class="secondary full" onclick="details('${c.id}')">Payment History</button>
+      <button class="danger full" onclick="deleteCustomer('${c.id}')">Delete Customer</button>
+    </div>`;
+  }).join(''):'<p class="muted">No customers found.</p>';
+
+  const totalSale=customers.reduce((s,c)=>s+c.sale,0);
+  const totalPaid=customers.reduce((s,c)=>s+paid(c),0);
+  $('summary').innerHTML='Customers: <b>'+customers.length+'</b><br>'+
+    'Total installment sales: <b>'+money(totalSale)+'</b><br>'+
+    'Total recorded paid: <b>'+money(totalPaid)+'</b><br>'+
+    'Total outstanding: <b>'+money(Math.max(0,totalSale-totalPaid))+'</b>';
+}
+window.addPayment=id=>{
+  const c=customers.find(x=>x.id===id);if(!c)return;
+  const due=Math.max(0,c.sale-paid(c));
+  if(due<=0){alert('This customer has no remaining balance.');return;}
+  const val=prompt('Payment amount in Rs. Remaining: '+due);
+  if(val===null)return;
+  const amount=Number(val);
+  if(!Number.isFinite(amount)||amount<=0||amount>due){
+    alert('Enter a valid amount up to '+due);return;
+  }
+  const note=prompt('Optional note (e.g. October installment):')||'';
+  c.payments.push({amount,date:new Date().toISOString(),note});
+  if(!saveData()){c.payments.pop();return;}
+  render();alert('Payment recorded.');
+};
+window.details=id=>{
+  const c=customers.find(x=>x.id===id);if(!c)return;
+  const lines=(c.payments||[]).map(p=>
+    new Date(p.date).toLocaleDateString()+' — '+money(p.amount)+
+    (p.note?' — '+p.note:'')
+  );
+  alert('Customer: '+c.name+'\nAdvance: '+money(c.advancePaid)+
+    '\n\nPayments:\n'+(lines.join('\n')||'No payments recorded yet.'));
+};
+window.deleteCustomer=id=>{
+  const c=customers.find(x=>x.id===id);if(!c)return;
+  if(!confirm('Delete '+c.name+' and all their payment records?'))return;
+  const old=customers;
+  customers=customers.filter(x=>x.id!==id);
+  if(!saveData()){customers=old;return;}
+  render();
+};
+$('search').addEventListener('input',render);
+$('exportBtn').addEventListener('click',()=>{
+  const blob=new Blob([JSON.stringify(customers,null,2)],{type:'application/json'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.href=url;a.download='azeez-mobile-hub-backup.json';a.click();
+  URL.revokeObjectURL(url);
+});
+$('importBtn').addEventListener('click',()=>$('importFile').click());
+$('importFile').addEventListener('change',async e=>{
+  const file=e.target.files[0];if(!file)return;
+  try{
+    const data=JSON.parse(await file.text());
+    if(!Array.isArray(data)||!data.every(c=>
+      c&&typeof c.id==='string'&&typeof c.name==='string'&&
+      typeof c.sale==='number'&&Array.isArray(c.payments)
+    ))throw Error('Invalid backup');
+    if(!confirm('Restore backup? This replaces the current customer list.'))return;
+    const old=customers;customers=data;
+    if(!saveData()){customers=old;return;}
+    render();alert('Backup restored.');
+  }catch(err){alert('Could not read this backup file.');}
+  finally{e.target.value='';}
+});
+preview();render();
 </script>
 </body>
 </html>
