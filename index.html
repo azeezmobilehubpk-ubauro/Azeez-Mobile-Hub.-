@@ -1,0 +1,71 @@
+
+<!DOCTYPE html>
+<html lang="ur">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Azeez Mobile Hub</title>
+<style>
+body{font-family:Arial,sans-serif;background:#f2f5f9;margin:0;padding:16px;color:#172033}
+main{max-width:520px;margin:auto}
+header{background:#12345a;color:white;padding:20px;border-radius:14px;text-align:center}
+section{background:white;padding:18px;margin-top:16px;border-radius:14px;box-shadow:0 2px 8px #0001}
+label{display:block;margin-top:14px;font-weight:bold}
+input,select{box-sizing:border-box;width:100%;padding:12px;margin-top:6px;border:1px solid #ccd3dd;border-radius:8px;font-size:16px}
+button{width:100%;padding:13px;background:#126bce;color:white;border:0;border-radius:8px;font-size:17px;margin-top:18px}
+.result{line-height:2;font-size:17px}
+.small{font-size:13px;color:#64748b}
+</style>
+</head>
+<body>
+<main>
+<header>
+<h2>Azeez Mobile Hub</h2>
+<p>Mobile Installment Calculator</p>
+</header>
+<section>
+<h3>Qiston ka Hisaab</h3>
+<label>Mobile Model</label>
+<input id="model" placeholder="Misal: Samsung A15">
+<label>Cash Price (Rs)</label>
+<input id="cash" type="number" value="50000" min="1">
+<label>Installment Price (Rs)</label>
+<input id="sale" type="number" value="75000" min="1">
+<label>Advance (%)</label>
+<input id="advance" type="number" value="30" min="0" max="100">
+<label>Qiston ka Arsa</label>
+<select id="months">
+<option value="3">3 Mahine</option>
+<option value="6" selected>6 Mahine</option>
+<option value="9">9 Mahine</option>
+<option value="12">12 Mahine</option>
+</select>
+<button onclick="calculate()">Hisab Karein</button>
+<div id="result" class="result"></div>
+<p class="small">Yeh calculator hai. Customer records abhi is version mein save nahi hote.</p>
+</section>
+</main>
+<script>
+function calculate(){
+const cash=Number(document.getElementById('cash').value);
+const sale=Number(document.getElementById('sale').value);
+const pct=Number(document.getElementById('advance').value);
+const months=Number(document.getElementById('months').value);
+const model=document.getElementById('model').value||'Mobile';
+if(cash<=0||sale<=0||pct<0||pct>100){alert('Sahi price aur advance likhein');return}
+const down=Math.round(sale*pct/100);
+const balance=sale-down;
+const monthly=Math.ceil(balance/months);
+document.getElementById('result').innerHTML=
+'<hr><b>'+model+'</b><br>'+
+'Cash Price: Rs '+cash.toLocaleString('en-PK')+'<br>'+
+'Installment Price: Rs '+sale.toLocaleString('en-PK')+'<br>'+
+'Advance: Rs '+down.toLocaleString('en-PK')+'<br>'+
+'Baqaya: Rs '+balance.toLocaleString('en-PK')+'<br>'+
+'Monthly Qist: Rs '+monthly.toLocaleString('en-PK')+'<br>'+
+'<span class="small">Aakhri qist mein rounding ka farq adjust karein.</span>';
+}
+calculate();
+</script>
+</body>
+</html>
